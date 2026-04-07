@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SKALA Energy — Sistema de Gestión Volumétrica</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --navy: #0a1628;
+  --navy2: #0f2040;
+  --blue: #1a4a8a;
+  --blue2: #1e5cb0;
+  --accent: #e8b84b;
+  --accent2: #f5c842;
+  --white: #ffffff;
+  --gray1: #f4f6f9;
+  --gray2: #e8ecf2;
+  --gray3: #c4cdd8;
+  --gray4: #8898aa;
+  --text: #1a2332;
+  --text2: #3d5166;
+  --success: #1a7a4a;
+  --danger: #c0392b;
+  --radius: 8px;
+  --shadow: 0 4px 20px rgba(10,22,40,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Barlow', sans-serif; background: var(--gray1); color: var(--text); min-height: 100vh; }
+
+/* SIDEBAR */
+.sidebar {
+  position: fixed; left: 0; top: 0; bottom: 0; width: 220px;
+  background: var(--navy); display: flex; flex-direction: column;
+  z-index: 100; box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+}
+.sidebar-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.logo-text { font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; color: var(--white); letter-spacing: 2px; }
+.logo-sub { font-size: 10px; color: var(--accent); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
+.sidebar-client {
+  padding: 12px 20px;
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.sidebar-client-label { font-size: 9px; color: var(--gray4); letter-spacing: 1px; text-transform: uppercase; }
+.sidebar-client-name { font-size: 13px; font-weight: 600; color: var(--accent); margin-top: 2px; }
+.nav { flex: 1; padding: 16px 0; }
+.nav-section { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gray4); padding: 8px 20px 4px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px; cursor: pointer; transition: all 0.15s;
+  font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.6);
+  border-left: 3px solid transparent;
+}
+.nav-item:hover { background: rgba(255,255,255,0.06); color: var(--white); }
+.nav-item.active { background: rgba(232,184,75,0.12); color: var(--accent); border-left-color: var(--accent); }
+.nav-icon { font-size: 15px; width: 18px; text-align: center; }
+.sidebar-footer { padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 11px; color: var(--gray4); }
+
+/* MAIN */
+.main { margin-left: 220px; min-height: 100vh; }
+.topbar {
+  background: var(--white); padding: 0 32px; height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--gray2); box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  position: sticky; top: 0; z-index: 50;
+}
+.topbar-title { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 600; letter-spacing: 0.5px; color: var(--navy); }
+.topbar-date { font-size: 12px; color: var(--gray4); }
+.content { padding: 28px 32px; }
+
+/* SECTION */
+.section { display: none; }
+.section.active { display: block; }
+
+/* STATS */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--white); border-radius: var(--radius); padding: 18px 20px;
+  border: 1px solid var(--gray2); position: relative; overflow: hidden;
+}
+.stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--blue2); }
+.stat-card.accent::before { background: var(--accent); }
+.stat-card.success::before { background: var(--success); }
+.stat-card.danger::before { background: var(--danger); }
+.stat-label { font-size: 11px; font-weight: 500; color: var(--gray4); text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value { font-size: 26px; font-weight: 700; color: var(--navy); margin-top: 4px; font-family: 'Barlow Condensed', sans-serif; }
+.stat-sub { font-size: 11px; color: var(--gray4); margin-top: 2px; }
+
+/* CARDS */
+.card {
+  background: var(--white); border-radius: var(--radius);
+  border: 1px solid var(--gray2); margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.card-header {
+  padding: 14px 20px; border-bottom: 1px solid var(--gray2);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-title { font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 600; letter-spacing: 0.3px; color: var(--navy); text-transform: uppercase; }
+.card-body { padding: 20px; }
+
+/* FORM */
+.form-grid { display: grid; gap: 14px; }
+.form-grid.g2 { grid-template-columns: 1fr 1fr; }
+.form-grid.g3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-grid.g4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.form-grid.g5 { grid-template-columns: 1fr 1fr 1fr 1fr 1fr; }
+.form-group label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 5px; }
+.form-group input, .form-group select, .form-group textarea {
+  width: 100%; padding: 9px 12px; font-size: 13px;
+  border: 1.5px solid var(--gray2); border-radius: 6px;
+  font-family: 'Barlow', sans-serif; color: var(--text);
+  background: var(--white); transition: border-color 0.15s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  outline: none; border-color: var(--blue2);
+}
+.form-group textarea { resize: vertical; min-height: 70px; }
+
+/* BUTTONS */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; border-radius: 6px; font-size: 13px; font-weight: 600; font-family: 'Barlow', sans-serif; cursor: pointer; border: none; transition: all 0.15s; }
+.btn-primary { background: var(--navy); color: var(--white); }
+.btn-primary:hover { background: var(--blue); }
+.btn-accent { background: var(--accent); color: var(--navy); }
+.btn-accent:hover { background: var(--accent2); }
+.btn-outline { background: none; border: 1.5px solid var(--gray3); color: var(--text2); }
+.btn-outline:hover { border-color: var(--blue2); color: var(--blue2); }
+.btn-danger { background: none; border: 1.5px solid #f5c6c2; color: var(--danger); font-size: 12px; padding: 5px 10px; }
+.btn-danger:hover { background: #fff0ef; }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-print { background: var(--navy2); color: var(--white); }
+.btn-print:hover { background: var(--blue); }
+
+/* TABLE */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th {
+  background: var(--navy); color: rgba(255,255,255,0.85); padding: 10px 12px;
+  text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase;
+}
+thead th:first-child { border-radius: 0; }
+tbody td { padding: 10px 12px; border-bottom: 1px solid var(--gray2); vertical-align: middle; }
+tbody tr:hover { background: var(--gray1); }
+tbody tr:last-child td { border-bottom: none; }
+tfoot td { padding: 11px 12px; background: var(--gray1); font-weight: 600; border-top: 2px solid var(--navy); }
+
+/* BADGE */
+.badge { display: inline-block; padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+.badge-blue { background: #dbeafe; color: #1e40af; }
+.badge-green { background: #d1fae5; color: #065f46; }
+.badge-amber { background: #fef3c7; color: #92400e; }
+.badge-gray { background: var(--gray2); color: var(--text2); }
+
+/* ALERT */
+.alert { padding: 11px 16px; border-radius: 6px; font-size: 13px; margin-bottom: 16px; display: none; font-weight: 500; }
+.alert-success { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; }
+.alert-error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
+
+/* EMPTY */
+.empty-state { text-align: center; padding: 40px 20px; color: var(--gray4); }
+.empty-state .empty-icon { font-size: 36px; margin-bottom: 10px; }
+.empty-state p { font-size: 13px; }
+
+/* FILTER ROW */
+.filter-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 20px; padding: 16px 20px; background: var(--white); border: 1px solid var(--gray2); border-radius: var(--radius); }
+.filter-row .form-group { min-width: 160px; margin: 0; }
+
+/* DIVIDER */
+.divider { height: 1px; background: var(--gray2); margin: 16px 0; }
+
+/* ============================
+   BOLETA DE CAMPO (PRINT)
+   ============================ */
+@media screen {
+  #print-area { display: none; }
+}
+@media print {
+  body * { visibility: hidden; }
+  #print-area, #print-area * { visibility: visible; }
+  #print-area { position: fixed; left: 0; top: 0; width: 100%; }
+  @page { size: letter; margin: 10mm 12mm; }
+}
+
+.boleta {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  color: #000;
+  background: #fff;
+  width: 100%;
+  page-break-after: always;
+}
+.boleta:last-child { page-break-after: avoid; }
+
+.boleta-system-bar {
+  background: #1a3a6b; color: #fff;
+  text-align: center; font-size: 9px; font-weight: bold;
+  padding: 3px 6px; letter-spacing: 1px;
+  text-transform: uppercase; margin-bottom: 0;
+}
+.boleta-header {
+  display: grid; grid-template-columns: 120px 1fr auto;
+  align-items: center; border: 1px solid #1a3a6b;
+  border-top: none; padding: 8px 10px; gap: 10px;
+}
+.boleta-logo-area { display: flex; align-items: center; gap: 6px; }
+.boleta-logo-circle {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: #1a3a6b; display: flex; align-items: center; justify-content: center;
+  color: #fff; font-weight: 900; font-size: 12px; letter-spacing: 1px;
+}
+.boleta-logo-name { font-size: 16px; font-weight: 900; color: #1a3a6b; letter-spacing: 2px; }
+.boleta-logo-sub { font-size: 7px; color: #666; letter-spacing: 1px; }
+.boleta-title { text-align: center; font-size: 14px; font-weight: 700; color: #1a3a6b; text-transform: uppercase; letter-spacing: 1px; }
+.boleta-folio { text-align: right; }
+.boleta-folio-num { font-size: 11px; font-weight: 700; color: #1a3a6b; }
+.boleta-folio-date { font-size: 9px; color: #555; }
+
+.boleta-info-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  border: 1px solid #1a3a6b; border-top: none;
+}
+.boleta-info-col { padding: 6px 10px; }
+.boleta-info-col:first-child { border-right: 1px solid #1a3a6b; }
+.boleta-info-row { display: flex; gap: 6px; margin-bottom: 3px; font-size: 9px; }
+.boleta-info-label { font-weight: 700; color: #1a3a6b; min-width: 70px; }
+.boleta-info-value { color: #222; }
+
+.boleta-section-header {
+  background: #1a3a6b; color: #fff;
+  font-size: 9px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; text-align: center;
+  padding: 4px; margin-top: 0;
+}
+.boleta-act-table { width: 100%; border-collapse: collapse; border: 1px solid #1a3a6b; border-top: none; }
+.boleta-act-table th {
+  background: #2d5090; color: #fff; font-size: 8px;
+  font-weight: 700; text-align: center; padding: 4px 6px;
+  letter-spacing: 0.5px; border: 1px solid #1a3a6b;
+}
+.boleta-act-table td {
+  font-size: 9px; padding: 5px 7px; border: 1px solid #c8d4e6;
+  vertical-align: top; min-height: 22px;
+}
+.boleta-act-table tr.empty-row td { height: 22px; }
+
+.boleta-partidas-table { width: 100%; border-collapse: collapse; border: 1px solid #1a3a6b; border-top: none; }
+.boleta-partidas-table th {
+  background: #2d5090; color: #fff; font-size: 8px;
+  font-weight: 700; text-align: center; padding: 4px 6px;
+  border: 1px solid #1a3a6b; letter-spacing: 0.3px;
+}
+.boleta-partidas-table td {
+  font-size: 9px; padding: 5px 7px; border: 1px solid #c8d4e6; vertical-align: middle;
+}
+.boleta-partidas-table td.center { text-align: center; }
+.boleta-partidas-table td.right { text-align: right; font-weight: 600; }
+.boleta-partidas-table tfoot td { background: #e8ecf5; font-weight: 700; }
+
+.boleta-bottom-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  border: 1px solid #1a3a6b; border-top: none; gap: 0;
+}
+.boleta-bottom-col { padding: 0; }
+.boleta-bottom-col:first-child { border-right: 1px solid #1a3a6b; }
+.boleta-bottom-col-header {
+  background: #2d5090; color: #fff; font-size: 8px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase; text-align: center; padding: 4px;
+}
+.boleta-personal-table { width: 100%; border-collapse: collapse; }
+.boleta-personal-table th { font-size: 8px; font-weight: 700; color: #1a3a6b; padding: 3px 6px; border-bottom: 1px solid #c8d4e6; background: #f0f4fa; }
+.boleta-personal-table td { font-size: 9px; padding: 4px 6px; border-bottom: 1px solid #e8ecf5; }
+.boleta-obs { font-size: 9px; padding: 6px 8px; min-height: 50px; color: #333; }
+.boleta-equipo { font-size: 9px; padding: 6px 8px; min-height: 35px; color: #333; }
+.boleta-equipo-header {
+  background: #2d5090; color: #fff; font-size: 8px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase; text-align: center; padding: 4px;
+  border-top: 1px solid #1a3a6b;
+}
+
+.boleta-firmas-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  border: 1px solid #1a3a6b; border-top: none;
+}
+.boleta-firma { padding: 8px 12px; text-align: center; }
+.boleta-firma:first-child { border-right: 1px solid #1a3a6b; }
+.boleta-firma-line { border-top: 1px solid #333; margin: 22px 10px 4px; }
+.boleta-firma-name { font-size: 9px; font-weight: 700; }
+.boleta-firma-role { font-size: 8px; color: #555; }
+.boleta-firma-label { font-size: 8px; font-weight: 700; color: #1a3a6b; margin-bottom: 6px; text-transform: uppercase; }
+
+.boleta-footer {
+  font-size: 7px; color: #777; text-align: center;
+  padding: 4px; border: 1px solid #1a3a6b; border-top: none;
+  font-style: italic;
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-text">● SKALA</div>
+    <div class="logo-sub">Energy Services</div>
+  </div>
+  <div class="sidebar-client">
+    <div class="sidebar-client-label">Cliente activo</div>
+    <div class="sidebar-client-name">Blue Marine</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Configuración</div>
+    <div class="nav-item active" onclick="showSection('partidas')">
+      <span class="nav-icon">◈</span> Catálogo de partidas
+    </div>
+    <div class="nav-section">Operación</div>
+    <div class="nav-item" onclick="showSection('registro')">
+      <span class="nav-icon">✦</span> Registro diario
+    </div>
+    <div class="nav-section">Reportes</div>
+    <div class="nav-item" onclick="showSection('reporte')">
+      <span class="nav-icon">◎</span> Volumetría y boletas
+    </div>
+    <div class="nav-section">Sistema</div>
+    <div class="nav-item" onclick="showSection('config')">
+      <span class="nav-icon">⚙</span> Configuración
+    </div>
+  </nav>
+  <div class="sidebar-footer">SKALA Energy v1.0</div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Catálogo de Partidas</div>
+    <div class="topbar-date" id="topbar-date"></div>
+  </div>
+
+  <div class="content">
+    <div id="alert-global" class="alert"></div>
+
+    <!-- ===== SECCIÓN: PARTIDAS ===== -->
+    <section id="sec-partidas" class="section active">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Nueva partida</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid g5">
+            <div class="form-group"><label>Código</label><input id="p-codigo" placeholder="Ej. P-001" /></div>
+            <div class="form-group"><label>Descripción</label><input id="p-desc" placeholder="Línea 3&quot; control superficial" /></div>
+            <div class="form-group"><label>Unidad</label>
+              <select id="p-unidad"><option>m</option><option>ft</option><option>m²</option><option>m³</option><option>pulgadas</option><option>pza</option><option>hora</option><option>servicio</option></select>
+            </div>
+            <div class="form-group"><label>Precio unitario (USD)</label><input id="p-precio" type="number" placeholder="0.00" step="0.01" /></div>
+            <div class="form-group"><label>Categoría</label>
+              <select id="p-categoria"><option>Renta de línea</option><option>Servicio técnico</option><option>Instalación</option><option>Mantenimiento</option><option>Otro</option></select>
+            </div>
+          </div>
+          <div style="margin-top:14px;">
+            <button class="btn btn-primary" onclick="agregarPartida()">+ Agregar partida</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Partidas registradas</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Código</th><th>Descripción</th><th>Unidad</th><th>Precio USD</th><th>Categoría</th><th>Acciones</th></tr></thead>
+            <tbody id="tb-partidas"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SECCIÓN: REGISTRO ===== -->
+    <section id="sec-registro" class="section">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Registro de volumetría diaria</span></div>
+        <div class="card-body">
+          <div class="form-grid g4">
+            <div class="form-group"><label>Fecha</label><input id="r-fecha" type="date" /></div>
+            <div class="form-group"><label>Partida</label>
+              <select id="r-partida"><option value="">— Selecciona —</option></select>
+            </div>
+            <div class="form-group"><label>Volumen / Cantidad</label><input id="r-volumen" type="number" placeholder="0.00" step="0.01" /></div>
+            <div class="form-group"><label>Horario inicio</label><input id="r-hinicio" type="time" /></div>
+          </div>
+          <div class="form-grid g4" style="margin-top:14px;">
+            <div class="form-group"><label>Horario fin</label><input id="r-hfin" type="time" /></div>
+            <div class="form-group"><label>Actividad / Descripción</label><input id="r-actividad" placeholder="Descripción de actividad realizada" /></div>
+            <div class="form-group"><label>Nota / Observación</label><input id="r-nota" placeholder="Observación de campo" /></div>
+            <div class="form-group" style="display:flex;align-items:flex-end;">
+              <button class="btn btn-primary" style="width:100%;" onclick="agregarRegistro()">+ Registrar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Registros del período</span>
+          <input type="date" id="filtro-fecha" onchange="renderRegistros()" style="font-size:12px;padding:5px 10px;border:1.5px solid var(--gray2);border-radius:6px;font-family:'Barlow',sans-serif;" />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Partida</th><th>Descripción</th><th>Volumen</th><th>H. Inicio</th><th>H. Fin</th><th>Precio U.</th><th>Subtotal USD</th><th>Nota</th><th></th></tr></thead>
+            <tbody id="tb-registros"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SECCIÓN: REPORTE ===== -->
+    <section id="sec-reporte" class="section">
+      <div class="filter-row">
+        <div class="form-group"><label>Fecha inicio</label><input id="f-inicio" type="date" /></div>
+        <div class="form-group"><label>Fecha fin</label><input id="f-fin" type="date" /></div>
+        <div class="form-group"><label>Partida</label>
+          <select id="f-partida" style="min-width:180px;padding:9px 12px;font-size:13px;border:1.5px solid var(--gray2);border-radius:6px;font-family:'Barlow',sans-serif;">
+            <option value="">Todas las partidas</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="generarReporte()" style="align-self:flex-end;">Calcular</button>
+        <button class="btn btn-accent" onclick="imprimirBoletas()" style="align-self:flex-end;" id="btn-imprimir" disabled>🖨 Imprimir boletas por día</button>
+        <button class="btn btn-outline" onclick="exportarCSV()" style="align-self:flex-end;">↓ Exportar CSV</button>
+      </div>
+
+      <div class="stats-grid" id="stats-reporte" style="display:none;">
+        <div class="stat-card accent"><div class="stat-label">Total USD</div><div class="stat-value" id="st-total">$0</div><div class="stat-sub">período seleccionado</div></div>
+        <div class="stat-card"><div class="stat-label">Registros</div><div class="stat-value" id="st-registros">0</div><div class="stat-sub">entradas de campo</div></div>
+        <div class="stat-card success"><div class="stat-label">Partidas activas</div><div class="stat-value" id="st-partidas">0</div><div class="stat-sub">con volumen</div></div>
+        <div class="stat-card"><div class="stat-label">Días trabajados</div><div class="stat-value" id="st-dias">0</div><div class="stat-sub">días únicos</div></div>
+      </div>
+
+      <div class="card" id="card-reporte-partidas" style="display:none;">
+        <div class="card-header"><span class="card-title">Resumen por partida</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Código</th><th>Descripción</th><th>Unidad</th><th>Vol. Total</th><th>Precio U. (USD)</th><th>Total USD</th></tr></thead>
+            <tbody id="tb-resumen"></tbody>
+            <tfoot id="tf-resumen"></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" id="card-reporte-detalle" style="display:none;">
+        <div class="card-header"><span class="card-title">Detalle por día</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Partida</th><th>Descripción</th><th>Volumen</th><th>H. Inicio</th><th>H. Fin</th><th>Subtotal USD</th><th>Nota</th></tr></thead>
+            <tbody id="tb-detalle"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SECCIÓN: CONFIGURACIÓN ===== -->
+    <section id="sec-config" class="section">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Datos de la empresa y proyecto</span></div>
+        <div class="card-body">
+          <div class="form-grid g3">
+            <div class="form-group"><label>Nombre empresa</label><input id="cfg-empresa" placeholder="SKALA Energy Services S.A. de C.V." /></div>
+            <div class="form-group"><label>Cliente</label><input id="cfg-cliente" placeholder="Blue Marine" /></div>
+            <div class="form-group"><label>SIS / Contrato</label><input id="cfg-sis" placeholder="Ej. 2023-BLY-SHIP-21-2025" /></div>
+          </div>
+          <div class="form-grid g3" style="margin-top:14px;">
+            <div class="form-group"><label>Plataforma</label><input id="cfg-plataforma" placeholder="Ej. Caburn-8" /></div>
+            <div class="form-group"><label>Pozo</label><input id="cfg-pozo" placeholder="Ej. Corail-5" /></div>
+            <div class="form-group"><label>Embarcación</label><input id="cfg-embarcacion" placeholder="Ej. BHS Grand Cannes" /></div>
+          </div>
+          <div class="form-grid g3" style="margin-top:14px;">
+            <div class="form-group"><label>Coordinador de Operaciones (firma 1)</label><input id="cfg-firma1-nombre" placeholder="Ing. Javier Sálas Olivárez" /></div>
+            <div class="form-group"><label>Cargo firma 1</label><input id="cfg-firma1-cargo" placeholder="Coordinador de Operaciones" /></div>
+            <div class="form-group"><label>Representante cliente (firma 2)</label><input id="cfg-firma2-nombre" placeholder="Ing. Omar Eduardo Luis Herrera" /></div>
+          </div>
+          <div class="form-grid g3" style="margin-top:14px;">
+            <div class="form-group"><label>Cargo firma 2</label><input id="cfg-firma2-cargo" placeholder="Subdirecctor de Operaciones" /></div>
+            <div class="form-group"><label>Texto pie de boleta</label><input id="cfg-pie" placeholder="Este documento es propiedad de SKALA ENERGY..." /></div>
+          </div>
+          <div style="margin-top:16px;">
+            <button class="btn btn-primary" onclick="guardarConfig()">Guardar configuración</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /content -->
+</main>
+
+<!-- ÁREA DE IMPRESIÓN -->
+<div id="print-area"></div>
+
+<script>
+// =====================
+// STATE
+// =====================
+let partidas = JSON.parse(localStorage.getItem('skala_partidas') || '[]');
+let registros = JSON.parse(localStorage.getItem('skala_registros') || '[]');
+let config = JSON.parse(localStorage.getItem('skala_config') || JSON.stringify({
+  empresa: 'SKALA Energy Services S.A. de C.V.',
+  cliente: 'Blue Marine',
+  sis: '',
+  plataforma: '',
+  pozo: '',
+  embarcacion: '',
+  firma1nombre: '',
+  firma1cargo: 'Coordinador de Operaciones',
+  firma2nombre: '',
+  firma2cargo: 'Subdirecctor de Operaciones',
+  pie: 'Este documento es propiedad de SKALA ENERGY S.A. de C.V., queda prohibida su reproducción total o parcial sin previo consentimiento autorizado.'
+}));
+
+let reporteActual = [];
+
+function save() {
+  localStorage.setItem('skala_partidas', JSON.stringify(partidas));
+  localStorage.setItem('skala_registros', JSON.stringify(registros));
+}
+
+// =====================
+// NAVIGATION
+// =====================
+const sectionTitles = {
+  partidas: 'Catálogo de Partidas',
+  registro: 'Registro Diario de Volumetría',
+  reporte: 'Volumetría y Boletas de Campo',
+  config: 'Configuración del Sistema'
+};
+
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  const items = document.querySelectorAll('.nav-item');
+  const map = ['partidas','registro','reporte','config'];
+  items.forEach((item, i) => { if (map[i] === id) item.classList.add('active'); });
+  document.getElementById('topbar-title').textContent = sectionTitles[id] || '';
+  if (id === 'registro') { actualizarSelectsPartidas(); renderRegistros(); }
+  if (id === 'reporte') { actualizarSelectsReporte(); }
+  if (id === 'config') { cargarConfig(); }
+}
+
+// =====================
+// DATE
+// =====================
+function updateDate() {
+  const now = new Date();
+  document.getElementById('topbar-date').textContent = now.toLocaleDateString('es-MX', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+}
+updateDate();
+setInterval(updateDate, 60000);
+
+// =====================
+// ALERT
+// =====================
+function showAlert(msg, type) {
+  const el = document.getElementById('alert-global');
+  el.className = 'alert alert-' + type;
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 3500);
+}
+
+// =====================
+// PARTIDAS
+// =====================
+function renderPartidas() {
+  const tb = document.getElementById('tb-partidas');
+  if (!partidas.length) {
+    tb.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">◈</div><p>No hay partidas registradas. Agrega la primera.</p></div></td></tr>';
+    return;
+  }
+  tb.innerHTML = partidas.map((p, i) => `
+    <tr>
+      <td><span class="badge badge-blue">${p.codigo}</span></td>
+      <td>${p.desc}</td>
+      <td><span class="badge badge-gray">${p.unidad}</span></td>
+      <td><strong>$${parseFloat(p.precio).toFixed(2)}</strong> USD</td>
+      <td><span class="badge badge-amber">${p.categoria}</span></td>
+      <td><button class="btn btn-danger" onclick="eliminarPartida(${i})">✕ Eliminar</button></td>
+    </tr>`).join('');
+}
+
+function agregarPartida() {
+  const codigo = document.getElementById('p-codigo').value.trim().toUpperCase();
+  const desc = document.getElementById('p-desc').value.trim();
+  const unidad = document.getElementById('p-unidad').value;
+  const precio = parseFloat(document.getElementById('p-precio').value);
+  const categoria = document.getElementById('p-categoria').value;
+  if (!codigo || !desc || isNaN(precio) || precio <= 0) { showAlert('Completa todos los campos correctamente.', 'error'); return; }
+  if (partidas.find(p => p.codigo === codigo)) { showAlert('El código de partida ya existe.', 'error'); return; }
+  partidas.push({ codigo, desc, unidad, precio, categoria });
+  save(); renderPartidas();
+  ['p-codigo','p-desc','p-precio'].forEach(id => document.getElementById(id).value = '');
+  showAlert(`Partida ${codigo} agregada correctamente.`, 'success');
+}
+
+function eliminarPartida(i) {
+  if (!confirm('¿Eliminar esta partida? Los registros existentes no se verán afectados.')) return;
+  partidas.splice(i, 1);
+  save(); renderPartidas();
+}
+
+// =====================
+// SELECTS
+// =====================
+function actualizarSelectsPartidas() {
+  const opts = partidas.map(p => `<option value="${p.codigo}">${p.codigo} – ${p.desc}</option>`).join('');
+  document.getElementById('r-partida').innerHTML = '<option value="">— Selecciona partida —</option>' + opts;
+}
+function actualizarSelectsReporte() {
+  const opts = partidas.map(p => `<option value="${p.codigo}">${p.codigo} – ${p.desc}</option>`).join('');
+  document.getElementById('f-partida').innerHTML = '<option value="">Todas las partidas</option>' + opts;
+}
+
+// =====================
+// REGISTROS
+// =====================
+function renderRegistros() {
+  const filtro = document.getElementById('filtro-fecha').value;
+  const tb = document.getElementById('tb-registros');
+  let data = [...registros].sort((a,b) => b.fecha.localeCompare(a.fecha));
+  if (filtro) data = data.filter(r => r.fecha === filtro);
+  if (!data.length) {
+    tb.innerHTML = '<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">✦</div><p>Sin registros' + (filtro ? ' para esta fecha' : '') + '.</p></div></td></tr>';
+    return;
+  }
+  tb.innerHTML = data.map(r => {
+    const p = partidas.find(p => p.codigo === r.partida) || {};
+    const sub = (p.precio||0) * r.volumen;
+    return `<tr>
+      <td>${r.fecha}</td>
+      <td><span class="badge badge-blue">${r.partida}</span></td>
+      <td style="font-size:12px;color:var(--text2)">${p.desc||''}</td>
+      <td><strong>${parseFloat(r.volumen).toFixed(2)}</strong> ${p.unidad||''}</td>
+      <td>${r.hinicio||'—'}</td><td>${r.hfin||'—'}</td>
+      <td>$${parseFloat(p.precio||0).toFixed(2)}</td>
+      <td><strong style="color:var(--blue)">$${sub.toFixed(2)}</strong></td>
+      <td style="font-size:11px;color:var(--gray4)">${r.nota||''}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="eliminarRegistro('${r.id}')">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function agregarRegistro() {
+  const fecha = document.getElementById('r-fecha').value;
+  const partida = document.getElementById('r-partida').value;
+  const volumen = parseFloat(document.getElementById('r-volumen').value);
+  const hinicio = document.getElementById('r-hinicio').value;
+  const hfin = document.getElementById('r-hfin').value;
+  const actividad = document.getElementById('r-actividad').value.trim();
+  const nota = document.getElementById('r-nota').value.trim();
+  if (!fecha || !partida || isNaN(volumen) || volumen <= 0) { showAlert('Completa fecha, partida y volumen.', 'error'); return; }
+  registros.push({ id: Date.now() + '_' + Math.random().toString(36).slice(2), fecha, partida, volumen, hinicio, hfin, actividad, nota });
+  save(); renderRegistros();
+  ['r-volumen','r-hinicio','r-hfin','r-actividad','r-nota'].forEach(id => document.getElementById(id).value = '');
+  showAlert('Registro guardado correctamente.', 'success');
+}
+
+function eliminarRegistro(id) {
+  if (!confirm('¿Eliminar este registro?')) return;
+  registros = registros.filter(r => r.id !== id);
+  save(); renderRegistros();
+}
+
+// =====================
+// REPORTE
+// =====================
+function generarReporte() {
+  const inicio = document.getElementById('f-inicio').value;
+  const fin = document.getElementById('f-fin').value;
+  const filtroP = document.getElementById('f-partida').value;
+  if (!inicio || !fin) { showAlert('Selecciona fecha inicio y fin.', 'error'); return; }
+  if (inicio > fin) { showAlert('La fecha inicio debe ser anterior al fin.', 'error'); return; }
+
+  let filtrados = registros.filter(r => r.fecha >= inicio && r.fecha <= fin);
+  if (filtroP) filtrados = filtrados.filter(r => r.partida === filtroP);
+  reporteActual = filtrados;
+
+  if (!filtrados.length) {
+    showAlert('No hay registros en el período seleccionado.', 'error');
+    document.getElementById('stats-reporte').style.display = 'none';
+    document.getElementById('card-reporte-partidas').style.display = 'none';
+    document.getElementById('card-reporte-detalle').style.display = 'none';
+    document.getElementById('btn-imprimir').disabled = true;
+    return;
+  }
+
+  // Resumen por partida
+  const resumen = {};
+  filtrados.forEach(r => {
+    if (!resumen[r.partida]) resumen[r.partida] = { volumen: 0, subtotal: 0 };
+    const p = partidas.find(p => p.codigo === r.partida) || { precio: 0 };
+    resumen[r.partida].volumen += r.volumen;
+    resumen[r.partida].subtotal += (p.precio||0) * r.volumen;
+  });
+
+  let totalUSD = 0;
+  const tbRes = document.getElementById('tb-resumen');
+  tbRes.innerHTML = Object.entries(resumen).map(([cod, d]) => {
+    const p = partidas.find(p => p.codigo === cod) || {};
+    totalUSD += d.subtotal;
+    return `<tr>
+      <td><span class="badge badge-blue">${cod}</span></td>
+      <td>${p.desc||''}</td>
+      <td>${p.unidad||''}</td>
+      <td><strong>${d.volumen.toFixed(2)}</strong></td>
+      <td>$${parseFloat(p.precio||0).toFixed(2)}</td>
+      <td><strong style="color:var(--blue)">$${d.subtotal.toFixed(2)}</strong></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('tf-resumen').innerHTML = `<tr>
+    <td colspan="3" style="text-align:right;font-size:11px;color:var(--gray4)">TOTAL DEL PERÍODO</td>
+    <td></td><td></td>
+    <td style="font-size:15px;color:var(--blue);font-family:'Barlow Condensed',sans-serif;">$${totalUSD.toFixed(2)} USD</td>
+  </tr>`;
+
+  // Detalle
+  const tbDet = document.getElementById('tb-detalle');
+  const sorted = [...filtrados].sort((a,b) => a.fecha.localeCompare(b.fecha) || (a.partida).localeCompare(b.partida));
+  tbDet.innerHTML = sorted.map(r => {
+    const p = partidas.find(p => p.codigo === r.partida) || {};
+    return `<tr>
+      <td>${r.fecha}</td>
+      <td><span class="badge badge-blue">${r.partida}</span></td>
+      <td style="font-size:12px">${p.desc||''}</td>
+      <td>${r.volumen.toFixed(2)} ${p.unidad||''}</td>
+      <td>${r.hinicio||'—'}</td><td>${r.hfin||'—'}</td>
+      <td><strong style="color:var(--blue)">$${((p.precio||0)*r.volumen).toFixed(2)}</strong></td>
+      <td style="font-size:11px;color:var(--gray4)">${r.nota||''}</td>
+    </tr>`;
+  }).join('');
+
+  // Stats
+  const diasUnicos = [...new Set(filtrados.map(r => r.fecha))].length;
+  document.getElementById('st-total').textContent = '$' + totalUSD.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  document.getElementById('st-registros').textContent = filtrados.length;
+  document.getElementById('st-partidas').textContent = Object.keys(resumen).length;
+  document.getElementById('st-dias').textContent = diasUnicos;
+
+  document.getElementById('stats-reporte').style.display = 'grid';
+  document.getElementById('card-reporte-partidas').style.display = 'block';
+  document.getElementById('card-reporte-detalle').style.display = 'block';
+  document.getElementById('btn-imprimir').disabled = false;
+}
+
+// =====================
+// EXPORTAR CSV
+// =====================
+function exportarCSV() {
+  if (!reporteActual.length) { showAlert('Primero genera el reporte.', 'error'); return; }
+  let csv = 'Fecha,Codigo,Descripcion,Volumen,Unidad,H.Inicio,H.Fin,Precio USD,Subtotal USD,Actividad,Nota\n';
+  reporteActual.forEach(r => {
+    const p = partidas.find(p => p.codigo === r.partida) || {};
+    csv += `${r.fecha},${r.partida},"${p.desc||''}",${r.volumen},${p.unidad||''},${r.hinicio||''},${r.hfin||''},${p.precio||0},${((p.precio||0)*r.volumen).toFixed(2)},"${r.actividad||''}","${r.nota||''}"\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const inicio = document.getElementById('f-inicio').value;
+  const fin = document.getElementById('f-fin').value;
+  a.download = `volumetria_${inicio}_${fin}.csv`;
+  a.click();
+}
+
+// =====================
+// BOLETAS DE CAMPO
+// =====================
+function imprimirBoletas() {
+  if (!reporteActual.length) { showAlert('Primero genera el reporte.', 'error'); return; }
+
+  // Agrupar por fecha
+  const porFecha = {};
+  reporteActual.forEach(r => {
+    if (!porFecha[r.fecha]) porFecha[r.fecha] = [];
+    porFecha[r.fecha].push(r);
+  });
+
+  const dias = Object.keys(porFecha).sort();
+  let htmlBoletas = '';
+  let folioBase = 1000;
+
+  dias.forEach((fecha, idx) => {
+    const regs = porFecha[fecha];
+    const folio = folioBase + idx + 1;
+    const fechaDisplay = new Date(fecha + 'T12:00:00').toLocaleDateString('es-MX', { day:'2-digit', month:'2-digit', year:'numeric' });
+
+    // Actividades (descripcion libre por dia)
+    const actRows = regs.slice(0,6).map(r => {
+      const p = partidas.find(p => p.codigo === r.partida) || {};
+      return `<tr>
+        <td class="center">${r.hinicio||''}</td>
+        <td class="center">${r.hfin||''}</td>
+        <td>${r.actividad || p.desc || ''} ${r.nota ? '— ' + r.nota : ''}</td>
+      </tr>`;
+    }).join('');
+    const emptyActRows = Math.max(0, 5 - regs.length);
+    const actEmptyHtml = Array(emptyActRows).fill('<tr class="empty-row"><td></td><td></td><td>&nbsp;</td></tr>').join('');
+
+    // Partidas
+    let totalBoleta = 0;
+    const partidaRows = regs.map(r => {
+      const p = partidas.find(p => p.codigo === r.partida) || {};
+      const sub = (p.precio||0) * r.volumen;
+      totalBoleta += sub;
+      return `<tr>
+        <td class="center">${r.partida}</td>
+        <td>${p.desc || r.actividad || ''}</td>
+        <td class="center">${parseFloat(r.volumen).toFixed(2)}</td>
+        <td class="center">${p.unidad||''}</td>
+        <td class="center">${r.hinicio||''}</td>
+        <td class="center">${r.hfin||''}</td>
+        <td class="right">$${sub.toFixed(2)}</td>
+      </tr>`;
+    }).join('');
+
+    // Personal (placeholder o de config)
+    const personalRows = `
+      <tr><td class="center">1</td><td>${config.firma1nombre || 'Técnico 1'}</td></tr>
+      <tr><td class="center">2</td><td></td></tr>`;
+
+    htmlBoletas += `
+    <div class="boleta">
+      <div class="boleta-system-bar">Sistema de Gestión Integral</div>
+      <div class="boleta-header">
+        <div class="boleta-logo-area">
+          <div class="boleta-logo-circle">SK</div>
+          <div>
+            <div class="boleta-logo-name">SKALA</div>
+            <div class="boleta-logo-sub">Energy Services</div>
+          </div>
+        </div>
+        <div class="boleta-title">Reporte de servicios</div>
+        <div class="boleta-folio">
+          <div class="boleta-folio-num">Folio: ${folio}</div>
+          <div class="boleta-folio-date">Fecha: ${fechaDisplay}</div>
+          <div class="boleta-folio-date">Pág. 1 de 1</div>
+        </div>
+      </div>
+
+      <div class="boleta-info-grid">
+        <div class="boleta-info-col">
+          <div class="boleta-info-row"><span class="boleta-info-label">Cliente:</span><span class="boleta-info-value">${config.cliente||'Blue Marine'}</span></div>
+          <div class="boleta-info-row"><span class="boleta-info-label">SIS:</span><span class="boleta-info-value">${config.sis||''}</span></div>
+          <div class="boleta-info-row"><span class="boleta-info-label">Plataforma:</span><span class="boleta-info-value">${config.plataforma||''}</span></div>
+          <div class="boleta-info-row"><span class="boleta-info-label">Pozo:</span><span class="boleta-info-value">${config.pozo||''}</span></div>
+        </div>
+        <div class="boleta-info-col">
+          <div class="boleta-info-row"><span class="boleta-info-label">Fecha:</span><span class="boleta-info-value">${fechaDisplay}</span></div>
+          <div class="boleta-info-row"><span class="boleta-info-label">Embarcación:</span><span class="boleta-info-value">${config.embarcacion||''}</span></div>
+          <div class="boleta-info-row"><span class="boleta-info-label">Empresa:</span><span class="boleta-info-value">${config.empresa||'SKALA Energy Services'}</span></div>
+        </div>
+      </div>
+
+      <div class="boleta-section-header">Actividades</div>
+      <table class="boleta-act-table">
+        <thead><tr><th style="width:60px">Horario Inicio</th><th style="width:60px">Horario Fin</th><th>Descripción</th></tr></thead>
+        <tbody>${actRows}${actEmptyHtml}</tbody>
+      </table>
+
+      <div class="boleta-section-header" style="margin-top:6px;">Partidas</div>
+      <table class="boleta-partidas-table">
+        <thead>
+          <tr>
+            <th style="width:55px">Partida</th>
+            <th>Concepto</th>
+            <th style="width:55px">Cantidad</th>
+            <th style="width:45px">Unidad</th>
+            <th style="width:55px">Hor. Inicio</th>
+            <th style="width:55px">Hor. Fin</th>
+            <th style="width:70px">Vol. Total</th>
+          </tr>
+        </thead>
+        <tbody>${partidaRows}</tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5" style="text-align:right;font-size:9px;color:#1a3a6b;letter-spacing:0.5px;">TOTAL DE LA BOLETA (USD)</td>
+            <td></td>
+            <td class="right" style="font-size:11px;color:#1a3a6b;">$${totalBoleta.toFixed(2)}</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div class="boleta-bottom-grid" style="margin-top:6px;">
+        <div class="boleta-bottom-col">
+          <div class="boleta-bottom-col-header">Personal Operativo</div>
+          <table class="boleta-personal-table">
+            <thead><tr><th style="width:40px">Cantidad</th><th>Nombre</th></tr></thead>
+            <tbody>${personalRows}</tbody>
+          </table>
+        </div>
+        <div class="boleta-bottom-col">
+          <div class="boleta-bottom-col-header">Observaciones</div>
+          <div class="boleta-obs">${regs.map(r=>r.nota).filter(Boolean).join(' | ') || '&nbsp;'}</div>
+          <div class="boleta-equipo-header">Equipo Utilizado</div>
+          <div class="boleta-equipo">${regs.map(r=>r.actividad).filter(Boolean).slice(0,2).join('. ') || '&nbsp;'}</div>
+        </div>
+      </div>
+
+      <div class="boleta-firmas-grid">
+        <div class="boleta-firma">
+          <div class="boleta-firma-label">Representante ${config.empresa ? config.empresa.split(' ')[0] : 'Skala'} Energy</div>
+          <div class="boleta-firma-line"></div>
+          <div class="boleta-firma-name">${config.firma1nombre || '_________________________'}</div>
+          <div class="boleta-firma-role">${config.firma1cargo || 'Coordinador de Operaciones'}</div>
+        </div>
+        <div class="boleta-firma">
+          <div class="boleta-firma-label">Representante ${config.cliente || 'Blue Marine'}</div>
+          <div class="boleta-firma-line"></div>
+          <div class="boleta-firma-name">${config.firma2nombre || '_________________________'}</div>
+          <div class="boleta-firma-role">${config.firma2cargo || 'Subdirecctor de Operaciones'}</div>
+        </div>
+      </div>
+
+      <div class="boleta-footer">${config.pie || 'Este documento es propiedad de SKALA ENERGY S.A. de C.V., queda prohibida su reproducción total o parcial sin previo consentimiento autorizado.'}</div>
+    </div>`;
+  });
+
+  document.getElementById('print-area').innerHTML = htmlBoletas;
+  setTimeout(() => window.print(), 200);
+}
+
+// =====================
+// CONFIG
+// =====================
+function cargarConfig() {
+  const fields = ['empresa','cliente','sis','plataforma','pozo','embarcacion','firma1nombre','firma1cargo','firma2nombre','firma2cargo','pie'];
+  fields.forEach(f => {
+    const el = document.getElementById('cfg-' + f.replace(/([A-Z])/g, '-$1').toLowerCase());
+    if (el) el.value = config[f] || '';
+  });
+}
+function guardarConfig() {
+  const fields = ['empresa','cliente','sis','plataforma','pozo','embarcacion','firma1nombre','firma1cargo','firma2nombre','firma2cargo','pie'];
+  fields.forEach(f => {
+    const el = document.getElementById('cfg-' + f.replace(/([A-Z])/g, '-$1').toLowerCase());
+    if (el) config[f] = el.value.trim();
+  });
+  localStorage.setItem('skala_config', JSON.stringify(config));
+  // Update sidebar client name
+  document.querySelector('.sidebar-client-name').textContent = config.cliente || 'Blue Marine';
+  showAlert('Configuración guardada correctamente.', 'success');
+}
+
+// =====================
+// INIT
+// =====================
+document.getElementById('r-fecha').value = new Date().toISOString().split('T')[0];
+renderPartidas();
+</script>
+</body>
+</html>
